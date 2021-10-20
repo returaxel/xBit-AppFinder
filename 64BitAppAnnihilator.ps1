@@ -9,10 +9,10 @@
 
 .EXAMPLE
     Remove every version older than 1.118
-    .\flowhunter2.0.ps1 -Uninstall  -TargetApp Yeee -TargetVer 1.118
+    .\64BitAppAnnihilator.ps1 -Uninstall  -TargetApp Yeee -TargetVer 1.118
 
     Run without -Uninstall switch too see whats goin' on
-    .\flowhunter2.0.ps1 -TargetApp Flow -TargetVer 1.118
+    .\64BitAppAnnihilator.ps1 -Uninstall  -TargetApp Yeee -TargetVer 1.118
 #>
 
 param (
