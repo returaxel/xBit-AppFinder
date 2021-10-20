@@ -12,7 +12,7 @@
     .\64BitAppAnnihilator.ps1 -Uninstall  -TargetApp Yeee -TargetVer 1.118
 
     Run without -Uninstall switch too see whats goin' on
-    .\64BitAppAnnihilator.ps1 -Uninstall  -TargetApp Yeee -TargetVer 1.118
+    .\64BitAppAnnihilator.ps1 -TargetApp Yeee -TargetVer 1.118
 #>
 
 param (
