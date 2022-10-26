@@ -1,4 +1,16 @@
-﻿# Find and uninstall 64 bit applications
+﻿<#
+.DESCRIPTION
+    - Find installed application GUID
+.PARAMETER Application
+    - Search registry for this application
+.PARAMETER Uninstall
+    - Attempt to uninstall *every* application found
+.EXAMPLE
+    - Lookup installed applications
+    - .\xBit-AppFinder-Uninstall.ps1 -Application <appname>
+.NOTES
+    - If you specify -Uninstall, it will attempt to uninstall *ALL OF THE APPLICATIONS FOUND*
+#>
 
 param(
     [Parameter()][string]$Application,
