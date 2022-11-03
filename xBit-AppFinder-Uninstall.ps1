@@ -13,7 +13,7 @@
 #>
 
 param(
-    [Parameter()][string]$Application,
+    [Parameter(Mandatory=$true)][string]$Application,
     [Parameter()][switch]$Uninstall
 )
 
@@ -26,11 +26,6 @@ function xBit-AppUninstall {
         $app.ExitCode = (Start-Process msiexec.exe -ArgumentList "/X $([regex]::Match($app.UninstallString,'[{]?[0-9a-fA-F]{8}-([0-9a-fA-F]{4}-){3}[0-9a-fA-F]{12}[}]?').Value) /qn" -Wait -Verb RunAs -Passthru).ExitCode
         return $InputObject
     }
-}
-
-# Find application guid by DisplayName
-if ([string]::IsNullOrEmpty($Application)) {
-    return Write-Host "No application selected"
 }
 
 # Registry
