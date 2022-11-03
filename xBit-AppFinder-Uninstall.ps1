@@ -3,7 +3,7 @@
     - Find installed application GUID
 .PARAMETER Application
     - Search registry for this application
-.PARAMETER Uninstall
+.PARAMETER Uninstall test
     - Attempt to uninstall *every* application found
 .EXAMPLE
     - Lookup installed applications
@@ -21,9 +21,10 @@ function xBit-AppUninstall {
     param (
         [Parameter()][pscustomobject]$InputObject
     )
+
     foreach ($app in $InputObject) {
-        $ExitCode = (Start-Process msiexec.exe -ArgumentList "/X $($app.UninstallString) /qn" -Wait -Verb RunAs -Passthru).ExitCode
-        Write-Host "[1] --$($app.DisplayName), ExitCode: $ExitCode"
+        $app.ExitCode = (Start-Process msiexec.exe -ArgumentList "/X $([regex]::Match($app.UninstallString,'[{]?[0-9a-fA-F]{8}-([0-9a-fA-F]{4}-){3}[0-9a-fA-F]{12}[}]?').Value) /qn" -Wait -Verb RunAs -Passthru).ExitCode
+        return $InputObject
     }
 }
 
@@ -33,59 +34,31 @@ if ([string]::IsNullOrEmpty($Application)) {
 }
 
 # Registry
-$HKLM32Uninst = "hklm:\\SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\"
-$HKLM64Uninst = "hklm:\\SOFTWARE\WOW6432Node\Microsoft\Windows\CurrentVersion\Uninstall\"
-$KeysHKLM32 = (Get-Item $HKLM32Uninst).GetSubKeynames()
-$KeysHKLM64 = (Get-Item $HKLM64Uninst).GetSubKeynames()
+$HKLMUninst = Get-ChildItem "hklm:\\SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\", "hklm:\\SOFTWARE\WOW6432Node\Microsoft\Windows\CurrentVersion\Uninstall\"
 
-# Iterate all installed 64-bit applications
-[PSCustomObject]$InfoArray64 = foreach ($key in $KeysHKLM64) {
+# Find applications
+$xBitApps = $HKLMUninst | Get-ItemProperty | Where-Object {$_.DisplayName -match $Application} | Select-Object -Property DisplayName, DisplayVersion, UninstallString, ExitCode
 
-    try {
-        $SubKeys = Get-ItemProperty -Verbose -Path $HKLM64Uninst$key
-    } 
-    catch {}
+# Uninstall
+if ($Uninstall) {
+    Write-Host "`n[ Uninstall ]" -ForegroundColor Green
 
-    if ($SubKeys.DisplayName -match "$($Application)") {
-        [PSCustomObject]@{
-            DisplayName = $SubKeys.DisplayName
-            DisplayVersion = $SubKeys.DisplayVersion
-            UninstallString = [regex]::Match($SubKeys.UninstallString,'[{]?[0-9a-fA-F]{8}-([0-9a-fA-F]{4}-){3}[0-9a-fA-F]{12}[}]?').Value
-            FullPath = "$($HKLM64Uninst)$($key)"     
+    <# Terminate $Application process if needed, add proc name manually if needed
+    while ((Get-Process $Application -ErrorAction SilentlyContinue).processName -contains $Application) {
+        try {
+            taskkill /IM "$($Application).exe" /T /F
+            Start-Sleep -Milliseconds 500
+        } catch {
+            Write-Host "Could not kill process for $Application" -ForegroundColor Yellow
+            exit 1
         }
-    }
-}
+    }#>
 
-# Iterate all installed 32-bit applications
-[PSCustomObject]$InfoArray32 = foreach ($key in $KeysHKLM32) {
-
-    try {
-        $SubKeys = Get-ItemProperty -Verbose -Path $HKLM32Uninst$key
-    } 
-    catch {}
-
-    if ($SubKeys.DisplayName -match "$($Application)") {
-        [PSCustomObject]@{
-            DisplayName = $SubKeys.DisplayName
-            DisplayVersion = $SubKeys.DisplayVersion
-            UninstallString = [regex]::Match($SubKeys.UninstallString,'[{]?[0-9a-fA-F]{8}-([0-9a-fA-F]{4}-){3}[0-9a-fA-F]{12}[}]?').Value
-        }
+    if ($xBitApps.Count -ne 0) {
+        $xBitApps = xBit-AppUninstall $xBitApps
     }
 }
 
 # Write info to console
-Write-Host "`n--64-bit ->" -ForegroundColor Green
-$InfoArray64 | Format-Table
-Write-Host '--32-bit ->' -ForegroundColor Green
-$InfoArray32 | Format-Table
-
-if ($Uninstall) {
-
-    if ($InfoArray64.Count -ne 0) {
-        xBit-AppUninstall $InfoArray64
-    }
-
-    if ($InfoArray32.Count -ne 0) {
-        xBit-AppUninstall $InfoArray32
-    }
-}
+Write-Host "`n[ INFO ]" -ForegroundColor Green
+$xBitApps | Format-Table
