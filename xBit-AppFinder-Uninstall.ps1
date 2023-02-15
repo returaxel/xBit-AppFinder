@@ -71,20 +71,19 @@ function xBit-Uninstall {
 $HKLMUninst = Get-ChildItem "hklm:\\SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\", "hklm:\\SOFTWARE\WOW6432Node\Microsoft\Windows\CurrentVersion\Uninstall\"
 
 # Find applications
-$xBitApps = $HKLMUninst | Get-ItemProperty | Where-Object {$_.DisplayName -match $Application} | Select-Object -Property DisplayName, DisplayVersion, UninstallString, ExitCode
+$xBitApps = $HKLMUninst | Get-ItemProperty | Where-Object {$_.DisplayName -match $Application} | Select-Object -Property DisplayName, DisplayVersion, InstallLocation, UninstallString, ExitCode
 
 # Uninstall
 if ($Uninstall) {
-    Write-Host "`n[ Uninstall ]" -ForegroundColor Green
-
-    # Comment out if process don't need to be terminated
-    xBit-TerminateProc -ProcessName $Application
-
     if ($xBitApps.Count -ne 0) {
+        Write-Output "`n[ UNINSTALLING... ]"
+        # Comment out if process don't need to be terminated
+        # xBit-TerminateProc -ProcessName $Application
+        # Uninstall
         $xBitApps = xBit-Uninstall $xBitApps
     }
 }
 
 # Write info to console
-Write-Host "`n[ INFO ]" -ForegroundColor Green
+Write-Output "`n[ INFO... ]"
 $xBitApps | Format-Table
